@@ -19,31 +19,15 @@
             notifyButton: {
               enable: true,
             },
-            path: '/',
-            serviceWorkerPath: '/OneSignalSDKWorker.js',
-            serviceWorkerParam: { scope: '/' }
+            path: '/'
           });
           
-          // Log successful initialization
           console.log('OneSignal initialized successfully');
-          
-          // Handle subscription changes
-          OneSignal.on('subscriptionChange', function(isSubscribed) {
-            console.log('OneSignal subscription changed:', isSubscribed);
-          });
           
         } catch (error) {
           console.error('OneSignal initialization error:', error);
         }
       });
-      
-      // Suppress non-critical OneSignal errors in console
-      window.addEventListener('error', function(e) {
-        if (e.message && e.message.includes('Unrecognized operation')) {
-          e.preventDefault();
-          return false;
-        }
-      }, true);
     </script>
   </head>
   <body>
