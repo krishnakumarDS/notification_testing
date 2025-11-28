@@ -23,18 +23,25 @@ function App() {
           }
         })
 
-        if (window.OneSignal) {
+        if (window.OneSignal && window.OneSignal.Notifications) {
           try {
-            const isEnabled = await window.OneSignal.isPushNotificationsEnabled()
-            setIsSubscribed(isEnabled)
+            const permission = await window.OneSignal.Notifications.permissionNative
+            setIsSubscribed(permission === 'granted')
           } catch (error) {
             // Fallback: check permission directly
             const permission = Notification.permission
             setIsSubscribed(permission === 'granted')
           }
+        } else {
+          // Fallback: check browser permission
+          const permission = Notification.permission
+          setIsSubscribed(permission === 'granted')
         }
       } catch (error) {
         console.error('Error checking subscription:', error)
+        // Fallback: check browser permission
+        const permission = Notification.permission
+        setIsSubscribed(permission === 'granted')
       }
     }
 
@@ -58,19 +65,27 @@ function App() {
         })
       }
 
-      if (window.OneSignal) {
-        // Request permission and register
-        await window.OneSignal.registerForPushNotifications()
-        const isEnabled = await window.OneSignal.isPushNotificationsEnabled()
-        setIsSubscribed(isEnabled)
+      if (window.OneSignal && window.OneSignal.Notifications) {
+        // Use OneSignal v16 API
+        const permission = await window.OneSignal.Notifications.requestPermission()
         
-        if (isEnabled) {
+        if (permission === 'granted') {
+          setIsSubscribed(true)
           alert('Notifications enabled successfully!')
         } else {
-          alert('Please allow notifications in your browser settings.')
+          setIsSubscribed(false)
+          alert('Notification permission was denied. Please enable it in your browser settings.')
         }
       } else {
-        alert('OneSignal is not initialized. Please refresh the page and try again.')
+        // Fallback: use browser Notification API
+        const permission = await Notification.requestPermission()
+        if (permission === 'granted') {
+          setIsSubscribed(true)
+          alert('Notifications enabled successfully!')
+        } else {
+          setIsSubscribed(false)
+          alert('Notification permission was denied. Please enable it in your browser settings.')
+        }
       }
     } catch (error) {
       console.error('Error enabling notifications:', error)
@@ -94,17 +109,21 @@ function App() {
         })
       }
 
-      if (window.OneSignal) {
-        // Set subscription to false
-        await window.OneSignal.setSubscription(false)
+      if (window.OneSignal && window.OneSignal.Session) {
+        // Use OneSignal v16 API to disable subscription
+        await window.OneSignal.Session.setPushSubscription(false)
         setIsSubscribed(false)
         alert('Notifications disabled successfully!')
       } else {
-        alert('OneSignal is not initialized. Please refresh the page and try again.')
+        // If OneSignal API not available, just update local state
+        setIsSubscribed(false)
+        alert('Notifications disabled. Note: You may need to unsubscribe from your browser settings.')
       }
     } catch (error) {
       console.error('Error disabling notifications:', error)
-      alert('Failed to disable notifications.')
+      // Still update local state even if API call fails
+      setIsSubscribed(false)
+      alert('Notifications disabled locally. You may need to unsubscribe from your browser settings.')
     } finally {
       setIsLoading(false)
     }
